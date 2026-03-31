@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "youtube-login",
+  "description": "Restricted capabilities for the external-origin YouTube login window",
+  "windows": ["youtube-login"],
+  "permissions": ["core:window:default"]
+}
