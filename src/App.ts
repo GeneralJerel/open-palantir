@@ -967,8 +967,7 @@ export class App {
       recentHeadlines: this.state.allNews.slice(0, 30).map((n) => ({
         title: n.title,
         source: n.source,
-        timestamp: n.pubDate ?? new Date().toISOString(),
-        category: n.category,
+        timestamp: n.pubDate instanceof Date ? n.pubDate.toISOString() : String(n.pubDate),
       })),
       activeMapLayers: activeLayers,
     });
@@ -979,19 +978,23 @@ export class App {
     // Navigate to country
     window.addEventListener('copilot:navigate-country', ((e: CustomEvent) => {
       const { countryCode, openBrief } = e.detail as { countryCode: string; openBrief: boolean };
-      if (this.state.map) {
-        this.state.map.flyToCountry?.(countryCode);
-      }
+      this.state.map?.fitCountry(countryCode);
       if (openBrief) {
-        this.countryIntel.openCountryBrief?.(countryCode);
+        const name = getCountryNameByCode(countryCode) ?? countryCode;
+        void this.countryIntel.openCountryBriefByCode(countryCode, name);
       }
       appBridge.update({ selectedCountry: countryCode });
     }) as EventListener);
 
-    // Add panel
+    // Add panel — enable it in settings and re-apply layout
     window.addEventListener('copilot:add-panel', ((e: CustomEvent) => {
       const { panelType } = e.detail as { panelType: string };
-      this.eventHandlers.togglePanel?.(panelType, true);
+      const config = this.state.panelSettings[panelType];
+      if (config) {
+        config.enabled = true;
+        saveToStorage(STORAGE_KEYS.panels, this.state.panelSettings);
+        this.eventHandlers.applyPanelSettings();
+      }
       appBridge.update({ activePanels: Object.keys(this.state.panels) });
     }) as EventListener);
 
@@ -1000,11 +1003,15 @@ export class App {
       const { query } = e.detail as { query: string; domain: string };
       const results = this.state.allNews
         .filter((n) => {
-          const text = `${n.title} ${n.source} ${n.category ?? ''}`.toLowerCase();
+          const text = `${n.title} ${n.source}`.toLowerCase();
           return query.toLowerCase().split(/\s+/).every((word) => text.includes(word));
         })
         .slice(0, 10)
-        .map((n) => ({ title: n.title, source: n.source, timestamp: n.pubDate, category: n.category }));
+        .map((n) => ({
+          title: n.title,
+          source: n.source,
+          timestamp: n.pubDate instanceof Date ? n.pubDate.toISOString() : String(n.pubDate),
+        }));
 
       window.dispatchEvent(
         new CustomEvent('copilot:search-results', { detail: { results } }),
@@ -1014,9 +1021,11 @@ export class App {
     // Toggle map layer
     window.addEventListener('copilot:toggle-layer', ((e: CustomEvent) => {
       const { layer, enabled } = e.detail as { layer: string; enabled: boolean };
-      if (layer in this.state.mapLayers) {
-        (this.state.mapLayers as Record<string, boolean>)[layer] = enabled;
-        this.state.map?.setLayerVisibility?.(layer, enabled);
+      const key = layer as keyof typeof this.state.mapLayers;
+      if (key in this.state.mapLayers) {
+        this.state.mapLayers[key] = enabled;
+        this.state.map?.setLayers(this.state.mapLayers);
+        saveToStorage(STORAGE_KEYS.mapLayers, this.state.mapLayers);
       }
       const activeLayers = Object.entries(this.state.mapLayers)
         .filter(([, v]) => v === true)
