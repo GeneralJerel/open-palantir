@@ -1032,6 +1032,26 @@ export class App {
         .map(([k]) => k);
       appBridge.update({ activeMapLayers: activeLayers });
     }) as EventListener);
+
+    // Activate/deactivate red-team scenario overlay
+    window.addEventListener('copilot:activate-scenario', ((e: CustomEvent) => {
+      const { overlay, center, zoom } = e.detail as {
+        overlay: import('@/types').ScenarioOverlay | null;
+        center?: { lat: number; lng: number };
+        zoom?: number;
+      };
+      this.state.mapLayers.redteamScenario = overlay !== null;
+      this.state.map?.setLayers(this.state.mapLayers);
+      this.state.map?.setScenarioOverlay(overlay);
+      if (center && overlay) {
+        this.state.map?.setCenter(center.lat, center.lng, zoom ?? 4);
+      }
+      saveToStorage(STORAGE_KEYS.mapLayers, this.state.mapLayers);
+      const activeLayers = Object.entries(this.state.mapLayers)
+        .filter(([, v]) => v === true)
+        .map(([k]) => k);
+      appBridge.update({ activeMapLayers: activeLayers });
+    }) as EventListener);
   }
 
   /**

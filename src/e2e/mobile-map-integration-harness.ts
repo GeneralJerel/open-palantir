@@ -138,6 +138,7 @@ const layers = {
   commodityPorts: false,
   webcams: false,
   weatherRadar: false, diseaseOutbreaks: false,
+  redteamScenario: false,
 };
 
 await initI18n();

@@ -234,6 +234,7 @@ export const DEFAULT_MAP_LAYERS: MapLayers = {
   commodityPorts: false,
   webcams: false,
   weatherRadar: false, diseaseOutbreaks: false,
+  redteamScenario: false,
 };
 
 // Mobile defaults for finance variant
@@ -295,6 +296,7 @@ export const MOBILE_DEFAULT_MAP_LAYERS: MapLayers = {
   commodityPorts: false,
   webcams: false,
   weatherRadar: false, diseaseOutbreaks: false,
+  redteamScenario: false,
 };
 
 export const VARIANT_CONFIG: VariantConfig = {

@@ -391,6 +391,10 @@ export class MapContainer {
     if (this.useDeckGL) { this.deckGLMap?.setLayers(layers); } else { this.svgMap?.setLayers(layers); }
   }
 
+  public setScenarioOverlay(overlay: import('@/types').ScenarioOverlay | null): void {
+    if (this.useDeckGL) { this.deckGLMap?.setScenarioOverlay(overlay); }
+  }
+
   public getState(): MapContainerState {
     if (this.useGlobe) return this.globeMap?.getState() ?? this.initialState;
     if (this.useDeckGL) {

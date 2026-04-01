@@ -653,6 +653,53 @@ export interface MapLayers {
   weatherRadar: boolean;
   // Health layers
   diseaseOutbreaks: boolean;
+  // Red-team scenario overlay
+  redteamScenario: boolean;
+}
+
+// ── Red-team scenario overlay types ─────────────────────────────────
+
+export interface ScenarioForceUnit {
+  id: string;
+  name: string;
+  type: 'base' | 'fleet' | 'missile_site' | 'airfield' | 'troop_concentration' | 'radar' | 'port';
+  faction: 'CN' | 'TW' | 'IR' | 'US' | 'allied';
+  lat: number;
+  lon: number;
+  strength?: string;
+  status?: string;
+}
+
+export interface ScenarioZone {
+  id: string;
+  name: string;
+  type: 'exclusion' | 'blockade' | 'adiz' | 'missile_range' | 'evacuation';
+  polygon: [number, number][]; // [lon, lat] ring
+  color: [number, number, number, number];
+}
+
+export interface ScenarioArc {
+  id: string;
+  name: string;
+  type: 'supply_line' | 'evacuation_corridor' | 'attack_vector' | 'patrol_route';
+  source: [number, number]; // [lon, lat]
+  target: [number, number];
+  color: [number, number, number, number];
+}
+
+export interface ScenarioMissileRange {
+  id: string;
+  name: string;
+  center: [number, number]; // [lon, lat]
+  radiusKm: number;
+  color: [number, number, number, number];
+}
+
+export interface ScenarioOverlay {
+  forces: ScenarioForceUnit[];
+  zones: ScenarioZone[];
+  arcs: ScenarioArc[];
+  missileRanges: ScenarioMissileRange[];
 }
 
 export interface AIDataCenter {

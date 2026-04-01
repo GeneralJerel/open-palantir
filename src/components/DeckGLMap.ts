@@ -351,6 +351,7 @@ export class DeckGLMap {
   private aptGroupsLoaded = false;
   private aptGroupsLayerFailed = false;
   private iranEvents: IranEvent[] = [];
+  private scenarioOverlay: import('@/types').ScenarioOverlay | null = null;
   private aisDisruptions: AisDisruptionEvent[] = [];
   private aisDensity: AisDensityZone[] = [];
   private cableAdvisories: CableAdvisory[] = [];
@@ -1481,6 +1482,14 @@ export class DeckGLMap {
       layers.push(this.createGhostLayer('iran-events-layer', filteredIranEvents, d => [d.longitude, d.latitude], { radiusMinPixels: 12 }));
     }
 
+    // Red-team scenario overlay
+    if (mapLayers.redteamScenario && this.scenarioOverlay) {
+      layers.push(this.createScenarioZonesLayer());
+      layers.push(this.createScenarioMissileRangesLayer());
+      layers.push(this.createScenarioArcsLayer());
+      layers.push(this.createScenarioForcesLayer());
+    }
+
     // Weather alerts layer
     if (mapLayers.weather && filteredWeatherAlerts.length > 0) {
       layers.push(this.createWeatherLayer(filteredWeatherAlerts));
@@ -2273,6 +2282,96 @@ export class DeckGLMap {
       getFillColor: (d: IranEvent) => getIranEventColor(d),
       radiusMinPixels: 4,
       radiusMaxPixels: 16,
+      pickable: true,
+    });
+  }
+
+  // ── Red-team scenario overlay layers ───────────────────────────────
+
+  private circlePolygon(center: [number, number], radiusKm: number, segments = 64): [number, number][] {
+    const [lng, lat] = center;
+    const points: [number, number][] = [];
+    for (let i = 0; i <= segments; i++) {
+      const angle = (2 * Math.PI * i) / segments;
+      const dLat = (radiusKm / 111.32) * Math.cos(angle);
+      const dLng = (radiusKm / (111.32 * Math.cos((lat * Math.PI) / 180))) * Math.sin(angle);
+      points.push([lng + dLng, lat + dLat]);
+    }
+    return points;
+  }
+
+  private static readonly FACTION_COLORS: Record<string, [number, number, number, number]> = {
+    CN: [220, 40, 40, 220],
+    TW: [40, 180, 80, 220],
+    US: [40, 100, 240, 220],
+    IR: [240, 150, 30, 220],
+    allied: [60, 200, 220, 220],
+  };
+
+  private createScenarioForcesLayer(): ScatterplotLayer {
+    const forces = this.scenarioOverlay!.forces;
+    return new ScatterplotLayer({
+      id: 'scenario-forces-layer',
+      data: forces,
+      getPosition: (d: import('@/types').ScenarioForceUnit) => [d.lon, d.lat],
+      getRadius: 20000,
+      getFillColor: (d: import('@/types').ScenarioForceUnit) =>
+        DeckGLMap.FACTION_COLORS[d.faction] || [150, 150, 150, 200],
+      getLineColor: [255, 255, 255, 200],
+      lineWidthMinPixels: 1,
+      stroked: true,
+      radiusMinPixels: 6,
+      radiusMaxPixels: 14,
+      pickable: true,
+    });
+  }
+
+  private createScenarioZonesLayer(): PolygonLayer {
+    const zones = this.scenarioOverlay!.zones;
+    return new PolygonLayer({
+      id: 'scenario-zones-layer',
+      data: zones,
+      getPolygon: (d: import('@/types').ScenarioZone) => d.polygon,
+      getFillColor: (d: import('@/types').ScenarioZone) => d.color,
+      getLineColor: (d: import('@/types').ScenarioZone) => {
+        const c = d.color;
+        return [c[0], c[1], c[2], Math.min(c[3] * 3, 200)] as [number, number, number, number];
+      },
+      lineWidthMinPixels: 1,
+      pickable: true,
+    });
+  }
+
+  private createScenarioArcsLayer(): ArcLayer {
+    const arcs = this.scenarioOverlay!.arcs;
+    return new ArcLayer({
+      id: 'scenario-arcs-layer',
+      data: arcs,
+      getSourcePosition: (d: import('@/types').ScenarioArc) => d.source,
+      getTargetPosition: (d: import('@/types').ScenarioArc) => d.target,
+      getSourceColor: (d: import('@/types').ScenarioArc) => d.color,
+      getTargetColor: (d: import('@/types').ScenarioArc) => d.color,
+      getWidth: 2,
+      pickable: true,
+    });
+  }
+
+  private createScenarioMissileRangesLayer(): PolygonLayer {
+    const ranges = this.scenarioOverlay!.missileRanges.map(r => ({
+      ...r,
+      polygon: this.circlePolygon(r.center, r.radiusKm),
+    }));
+    return new PolygonLayer({
+      id: 'scenario-missile-ranges-layer',
+      data: ranges,
+      getPolygon: (d: { polygon: [number, number][] }) => d.polygon,
+      getFillColor: (d: { color: [number, number, number, number] }) => d.color,
+      getLineColor: (d: { color: [number, number, number, number] }) => {
+        const c = d.color;
+        return [c[0], c[1], c[2], Math.min(c[3] * 4, 180)] as [number, number, number, number];
+      },
+      lineWidthMinPixels: 1,
+      getLineWidth: 1,
       pickable: true,
     });
   }
@@ -3699,6 +3798,14 @@ export class DeckGLMap {
         return { html: `<div class="deckgl-tooltip"><strong>${t('popups.cyberThreat.title')}</strong><br/>${text(obj.severity || t('components.deckgl.tooltip.medium'))} · ${text(obj.country || t('popups.unknown'))}</div>` };
       case 'iran-events-layer':
         return { html: `<div class="deckgl-tooltip"><strong>${t('components.deckgl.layers.iranAttacks')}: ${text(obj.category || '')}</strong><br/>${text((obj.title || '').slice(0, 80))}</div>` };
+      case 'scenario-forces-layer':
+        return { html: `<div class="deckgl-tooltip"><strong>${text(obj.name)}</strong><br/>${text(obj.faction)} · ${text(obj.type)}<br/>${text(obj.strength || '')}</div>` };
+      case 'scenario-zones-layer':
+        return { html: `<div class="deckgl-tooltip"><strong>${text(obj.name)}</strong><br/>${text(obj.type)}</div>` };
+      case 'scenario-arcs-layer':
+        return { html: `<div class="deckgl-tooltip"><strong>${text(obj.name)}</strong><br/>${text(obj.type?.replace('_', ' ') || '')}</div>` };
+      case 'scenario-missile-ranges-layer':
+        return { html: `<div class="deckgl-tooltip"><strong>${text(obj.name)}</strong></div>` };
       case 'news-locations-layer':
         return { html: `<div class="deckgl-tooltip"><strong>📰 ${t('components.deckgl.tooltip.news')}</strong><br/>${text(obj.title?.slice(0, 80) || '')}</div>` };
       case 'positive-events-layer': {
@@ -4707,6 +4814,11 @@ export class DeckGLMap {
       const toggle = this.container.querySelector(`.layer-toggle[data-layer="${key}"] input`) as HTMLInputElement;
       if (toggle) toggle.checked = value;
     });
+  }
+
+  public setScenarioOverlay(overlay: import('@/types').ScenarioOverlay | null): void {
+    this.scenarioOverlay = overlay;
+    this.render();
   }
 
   public getState(): DeckMapState {
