@@ -19,9 +19,42 @@ const FACTION_LABELS: Record<string, { label: string; color: string }> = {
   allied: { label: 'Allied', color: '#3cc8dc' },
 };
 
+const REVEAL_DELAY_MS = 400;
+const SECTION_COUNT = 4; // header, theater, initial move, response options
+
+function useProgressiveReveal(skip: boolean) {
+  const [revealed, setRevealed] = useState(skip ? SECTION_COUNT : 0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (skip) return;
+    timerRef.current = setInterval(() => {
+      setRevealed((prev) => {
+        if (prev >= SECTION_COUNT) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, REVEAL_DELAY_MS);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [skip]);
+
+  return revealed;
+}
+
+const revealStyle = (visible: boolean): React.CSSProperties => ({
+  opacity: visible ? 1 : 0,
+  transform: visible ? 'translateY(0)' : 'translateY(8px)',
+  transition: 'opacity 0.4s ease, transform 0.4s ease',
+});
+
 function ScenarioWargameCard({ status, args, compact, onExpand }: { status: string; args: any; compact?: boolean; onExpand?: () => void }) {
   const scenarioEventDispatched = useRef(false);
   const [scenarioActivated, setScenarioActivated] = useState(false);
+  const revealed = useProgressiveReveal(!!compact);
 
   const scenario = args.scenario as any;
   const move = args.initialMove as any;
@@ -81,7 +114,7 @@ function ScenarioWargameCard({ status, args, compact, onExpand }: { status: stri
       <ClassifiedHeader classification={scenario?.classification || CHINA_TAIWAN_IRAN_SCENARIO.classification} />
 
       {/* Scenario header */}
-      <div style={{ padding: compact ? t.spacing.md : t.spacing.lg, borderBottom: `1px solid ${t.colors.borderSubtle}` }}>
+      <div style={{ ...revealStyle(revealed >= 1), padding: compact ? t.spacing.md : t.spacing.lg, borderBottom: `1px solid ${t.colors.borderSubtle}` }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ fontFamily: t.fonts.mono, fontSize: 10, color: t.colors.accent, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 }}>
             Scenario Wargame
@@ -126,7 +159,7 @@ function ScenarioWargameCard({ status, args, compact, onExpand }: { status: stri
 
       {/* Theater overview */}
       {scenarioActivated && (
-        <>
+        <div style={revealStyle(revealed >= 2)}>
           <SectionHeader title="Theater Force Disposition" />
           <div style={{ padding: `${t.spacing.sm}px ${compact ? t.spacing.md : t.spacing.lg}px` }}>
             {/* Map active indicator */}
@@ -183,12 +216,12 @@ function ScenarioWargameCard({ status, args, compact, onExpand }: { status: stri
               </div>
             )}
           </div>
-        </>
+        </div>
       )}
 
       {/* Initial move */}
       {move && (
-        <>
+        <div style={revealStyle(revealed >= 3)}>
           <SectionHeader title="Initial Move" />
           <div style={{ padding: compact ? t.spacing.md : t.spacing.lg }}>
             <div
@@ -232,12 +265,12 @@ function ScenarioWargameCard({ status, args, compact, onExpand }: { status: stri
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {/* Response options */}
       {visibleResponses.length > 0 && (
-        <>
+        <div style={revealStyle(revealed >= 4)}>
           <SectionHeader title="Response Options" />
           <div style={{ padding: `${t.spacing.sm}px ${compact ? t.spacing.md : t.spacing.lg}px` }}>
             {visibleResponses.map((r: any, i: number) => {
@@ -317,7 +350,7 @@ function ScenarioWargameCard({ status, args, compact, onExpand }: { status: stri
               </div>
             )}
           </div>
-        </>
+        </div>
       )}
 
       {/* Footer */}
