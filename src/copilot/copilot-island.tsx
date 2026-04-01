@@ -36,4 +36,34 @@ export function mountCopilotIsland(): void {
       </WorldMonitorCopilotProvider>
     </CopilotKit>,
   );
+
+  // Shrink the main app when the sidebar opens instead of overlapping
+  setupSidebarPush(container);
+}
+
+/**
+ * Watch for CopilotKit's `sidebarExpanded` class and push the main #app
+ * content to the left so the sidebar doesn't overlap the dashboard.
+ */
+function setupSidebarPush(copilotRoot: HTMLElement): void {
+  const appEl = document.getElementById('app');
+  if (!appEl) return;
+
+  // CopilotKit sidebar width is 28rem (from its CSS)
+  const SIDEBAR_WIDTH = '28rem';
+
+  // Apply a smooth transition on the app container
+  appEl.style.transition = 'margin-right 0.3s ease';
+
+  const observer = new MutationObserver(() => {
+    const wrapper = copilotRoot.querySelector('.copilotKitSidebarContentWrapper');
+    const isOpen = wrapper?.classList.contains('sidebarExpanded') ?? false;
+    appEl.style.marginRight = isOpen ? SIDEBAR_WIDTH : '0px';
+  });
+
+  observer.observe(copilotRoot, {
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class'],
+  });
 }
