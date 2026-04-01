@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCopilotAction } from '@copilotkit/react-core';
 import { IntelCard } from '../components/IntelCard';
 import { ClassifiedHeader } from '../components/ClassifiedHeader';
 import { SeverityBadge } from '../components/SeverityBadge';
 import { SectionHeader } from '../components/SectionHeader';
 import { LoadingIndicator } from '../components/LoadingIndicator';
+import { ExpandedModal } from '../components/ExpandedModal';
 import { INTEL_THEME, severityColor, recommendationColor } from '../components/intel-theme';
 import { CHINA_TAIWAN_IRAN_OVERLAY, CHINA_TAIWAN_IRAN_SCENARIO } from '../data/china-taiwan-iran-scenario';
 
@@ -18,36 +19,39 @@ const FACTION_LABELS: Record<string, { label: string; color: string }> = {
   allied: { label: 'Allied', color: '#3cc8dc' },
 };
 
-function ScenarioWargameCard({ status, args }: { status: string; args: any }) {
-  const scenarioActivated = useRef(false);
+function ScenarioWargameCard({ status, args, compact, onExpand }: { status: string; args: any; compact?: boolean; onExpand?: () => void }) {
+  const scenarioEventDispatched = useRef(false);
+  const [scenarioActivated, setScenarioActivated] = useState(false);
 
   const scenario = args.scenario as any;
   const move = args.initialMove as any;
   const responses = (args.responseOptions as any[]) || [];
 
-  // Activate map overlay when the scenario renders and region matches
+  const visibleResponses = compact ? responses.slice(0, 2) : responses;
+
+  // Activate map overlay when the scenario renders
+  // NOTE: Overlay data is a static fixture (China/Taiwan/Iran). Pending dynamic generation from LLM params.
   useEffect(() => {
-    if (scenarioActivated.current) return;
-    const region = scenario?.region || '';
-    if (/china|taiwan|iran|indo.?pacific|strait|two.?front/i.test(region)) {
-      scenarioActivated.current = true;
-      window.dispatchEvent(
-        new CustomEvent('copilot:activate-scenario', {
-          detail: {
-            overlay: CHINA_TAIWAN_IRAN_OVERLAY,
-            center: { lat: 24.0, lng: 120.0 },
-            zoom: 4,
-          },
-        }),
-      );
-    }
+    if (scenarioEventDispatched.current) return;
+    if (!scenario?.region) return;
+    scenarioEventDispatched.current = true;
+    setScenarioActivated(true);
+    window.dispatchEvent(
+      new CustomEvent('copilot:activate-scenario', {
+        detail: {
+          overlay: CHINA_TAIWAN_IRAN_OVERLAY,
+          center: { lat: 24.0, lng: 120.0 },
+          zoom: 4,
+        },
+      }),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scenario?.region]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (scenarioActivated.current) {
+      if (scenarioEventDispatched.current) {
         window.dispatchEvent(
           new CustomEvent('copilot:activate-scenario', {
             detail: { overlay: null },
@@ -59,10 +63,10 @@ function ScenarioWargameCard({ status, args }: { status: string; args: any }) {
 
   if (status === 'inProgress' && !scenario?.title) {
     return (
-      <IntelCard>
+      <>
         <ClassifiedHeader classification="TOP SECRET // SCI" />
         <LoadingIndicator />
-      </IntelCard>
+      </>
     );
   }
 
@@ -73,15 +77,37 @@ function ScenarioWargameCard({ status, args }: { status: string; args: any }) {
   }, {});
 
   return (
-    <IntelCard>
+    <>
       <ClassifiedHeader classification={scenario?.classification || CHINA_TAIWAN_IRAN_SCENARIO.classification} />
 
       {/* Scenario header */}
-      <div style={{ padding: t.spacing.lg, borderBottom: `1px solid ${t.colors.borderSubtle}` }}>
-        <div style={{ fontFamily: t.fonts.mono, fontSize: 10, color: t.colors.accent, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 }}>
-          Scenario Wargame
+      <div style={{ padding: compact ? t.spacing.md : t.spacing.lg, borderBottom: `1px solid ${t.colors.borderSubtle}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontFamily: t.fonts.mono, fontSize: 10, color: t.colors.accent, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 }}>
+            Scenario Wargame
+          </div>
+          {compact && onExpand && (
+            <button
+              onClick={onExpand}
+              style={{
+                background: `${t.colors.accent}18`,
+                border: `1px solid ${t.colors.accent}44`,
+                color: t.colors.accent,
+                fontFamily: t.fonts.mono,
+                fontSize: 9,
+                fontWeight: 700,
+                letterSpacing: 1.5,
+                padding: '4px 12px',
+                borderRadius: 4,
+                cursor: 'pointer',
+                textTransform: 'uppercase',
+              }}
+            >
+              EXPAND ↗
+            </button>
+          )}
         </div>
-        <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{scenario?.title}</div>
+        <div style={{ fontSize: compact ? 16 : 18, fontWeight: 700, marginBottom: 4 }}>{scenario?.title}</div>
         <span
           style={{
             fontFamily: t.fonts.mono,
@@ -95,14 +121,14 @@ function ScenarioWargameCard({ status, args }: { status: string; args: any }) {
         >
           {scenario?.region}
         </span>
-        <div style={{ fontSize: 12, color: t.colors.textDim, marginTop: t.spacing.sm }}>{scenario?.description}</div>
+        {!compact && <div style={{ fontSize: 12, color: t.colors.textDim, marginTop: t.spacing.sm }}>{scenario?.description}</div>}
       </div>
 
       {/* Theater overview */}
-      {scenarioActivated.current && (
+      {scenarioActivated && (
         <>
           <SectionHeader title="Theater Force Disposition" />
-          <div style={{ padding: `${t.spacing.sm}px ${t.spacing.lg}px` }}>
+          <div style={{ padding: `${t.spacing.sm}px ${compact ? t.spacing.md : t.spacing.lg}px` }}>
             {/* Map active indicator */}
             <div
               style={{
@@ -151,9 +177,11 @@ function ScenarioWargameCard({ status, args }: { status: string; args: any }) {
             </div>
 
             {/* Overlay summary */}
-            <div style={{ marginTop: t.spacing.sm, fontFamily: t.fonts.mono, fontSize: 9, color: t.colors.textMuted }}>
-              {CHINA_TAIWAN_IRAN_OVERLAY.zones.length} zones · {CHINA_TAIWAN_IRAN_OVERLAY.arcs.length} arcs · {CHINA_TAIWAN_IRAN_OVERLAY.missileRanges.length} missile envelopes
-            </div>
+            {!compact && (
+              <div style={{ marginTop: t.spacing.sm, fontFamily: t.fonts.mono, fontSize: 9, color: t.colors.textMuted }}>
+                {CHINA_TAIWAN_IRAN_OVERLAY.zones.length} zones · {CHINA_TAIWAN_IRAN_OVERLAY.arcs.length} arcs · {CHINA_TAIWAN_IRAN_OVERLAY.missileRanges.length} missile envelopes
+              </div>
+            )}
           </div>
         </>
       )}
@@ -162,12 +190,12 @@ function ScenarioWargameCard({ status, args }: { status: string; args: any }) {
       {move && (
         <>
           <SectionHeader title="Initial Move" />
-          <div style={{ padding: t.spacing.lg }}>
+          <div style={{ padding: compact ? t.spacing.md : t.spacing.lg }}>
             <div
               style={{
                 border: `1px solid ${severityColor(move.severity)}`,
                 borderRadius: 6,
-                padding: t.spacing.md,
+                padding: compact ? t.spacing.sm : t.spacing.md,
                 background: `${severityColor(move.severity)}11`,
               }}
             >
@@ -175,7 +203,7 @@ function ScenarioWargameCard({ status, args }: { status: string; args: any }) {
                 <span style={{ fontFamily: t.fonts.mono, fontSize: 11, color: t.colors.accent }}>{move.actor}</span>
                 <SeverityBadge level={move.severity} />
               </div>
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: t.spacing.sm }}>{move.action}</div>
+              <div style={{ fontSize: compact ? 12 : 13, fontWeight: 600, marginBottom: t.spacing.sm }}>{move.action}</div>
 
               {/* Probability bar */}
               <div style={{ display: 'flex', alignItems: 'center', gap: t.spacing.sm }}>
@@ -208,11 +236,11 @@ function ScenarioWargameCard({ status, args }: { status: string; args: any }) {
       )}
 
       {/* Response options */}
-      {responses.length > 0 && (
+      {visibleResponses.length > 0 && (
         <>
           <SectionHeader title="Response Options" />
-          <div style={{ padding: `${t.spacing.sm}px ${t.spacing.lg}px` }}>
-            {responses.map((r: any, i: number) => {
+          <div style={{ padding: `${t.spacing.sm}px ${compact ? t.spacing.md : t.spacing.lg}px` }}>
+            {visibleResponses.map((r: any, i: number) => {
               const recColor = recommendationColor(r.recommendation);
               return (
                 <div
@@ -220,14 +248,14 @@ function ScenarioWargameCard({ status, args }: { status: string; args: any }) {
                   style={{
                     border: `1px solid ${t.colors.border}`,
                     borderRadius: 6,
-                    padding: t.spacing.md,
+                    padding: compact ? t.spacing.sm : t.spacing.md,
                     marginBottom: t.spacing.sm,
                     background: t.colors.surface,
                   }}
                 >
                   {/* Title + recommendation */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                    <span style={{ fontWeight: 700, fontSize: 13 }}>{r.title}</span>
+                    <span style={{ fontWeight: 700, fontSize: compact ? 12 : 13 }}>{r.title}</span>
                     {r.recommendation && (
                       <span
                         style={{
@@ -247,7 +275,7 @@ function ScenarioWargameCard({ status, args }: { status: string; args: any }) {
                     )}
                   </div>
 
-                  <div style={{ fontSize: 11, color: t.colors.textDim, marginBottom: t.spacing.sm }}>{r.description}</div>
+                  {!compact && <div style={{ fontSize: 11, color: t.colors.textDim, marginBottom: t.spacing.sm }}>{r.description}</div>}
 
                   {/* Probability bar */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: t.spacing.sm, marginBottom: t.spacing.sm }}>
@@ -266,21 +294,28 @@ function ScenarioWargameCard({ status, args }: { status: string; args: any }) {
                   </div>
 
                   {/* Consequences */}
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: t.colors.textDim,
-                      fontStyle: 'italic',
-                      padding: `${t.spacing.xs}px ${t.spacing.sm}px`,
-                      borderLeft: `2px solid ${severityColor(r.severity)}`,
-                      background: `${t.colors.bg}`,
-                    }}
-                  >
-                    {r.consequences}
-                  </div>
+                  {!compact && (
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: t.colors.textDim,
+                        fontStyle: 'italic',
+                        padding: `${t.spacing.xs}px ${t.spacing.sm}px`,
+                        borderLeft: `2px solid ${severityColor(r.severity)}`,
+                        background: `${t.colors.bg}`,
+                      }}
+                    >
+                      {r.consequences}
+                    </div>
+                  )}
                 </div>
               );
             })}
+            {compact && responses.length > 2 && (
+              <div style={{ fontFamily: t.fonts.mono, fontSize: 10, color: t.colors.textMuted, padding: `${t.spacing.xs}px 0`, letterSpacing: 1 }}>
+                +{responses.length - 2} MORE OPTIONS
+              </div>
+            )}
           </div>
         </>
       )}
@@ -288,7 +323,7 @@ function ScenarioWargameCard({ status, args }: { status: string; args: any }) {
       {/* Footer */}
       <div
         style={{
-          padding: `${t.spacing.sm}px ${t.spacing.lg}px`,
+          padding: `${t.spacing.sm}px ${compact ? t.spacing.md : t.spacing.lg}px`,
           fontFamily: t.fonts.mono,
           fontSize: 9,
           color: t.colors.textMuted,
@@ -298,9 +333,26 @@ function ScenarioWargameCard({ status, args }: { status: string; args: any }) {
           textTransform: 'uppercase',
         }}
       >
-        Wargame generated {new Date().toISOString().slice(0, 16)} // CopilotKit STRATCOM
+        Wargame generated {new Date().toISOString().slice(0, 16)} // STRATCOM
       </div>
-    </IntelCard>
+    </>
+  );
+}
+
+function ScenarioWargameRender({ status, args }: { status: string; args: any }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <>
+      <IntelCard>
+        <ScenarioWargameCard status={status} args={args} compact onExpand={() => setExpanded(true)} />
+      </IntelCard>
+
+      {expanded && (
+        <ExpandedModal onClose={() => setExpanded(false)}>
+          <ScenarioWargameCard status={status} args={args} />
+        </ExpandedModal>
+      )}
+    </>
   );
 }
 
@@ -349,6 +401,6 @@ export function useScenarioWargameAction() {
     handler: async ({ scenario }) => {
       return `Wargame analysis complete for scenario: ${(scenario as any)?.title}`;
     },
-    render: ({ status, args }) => <ScenarioWargameCard status={status} args={args} />,
+    render: ({ status, args }) => <ScenarioWargameRender status={status} args={args} />,
   });
 }

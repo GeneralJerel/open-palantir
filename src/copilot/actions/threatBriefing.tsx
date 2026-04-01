@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useCopilotAction } from '@copilotkit/react-core';
+import { useCopilotChat } from '@copilotkit/react-core';
+import { TextMessage, MessageRole } from '@copilotkit/runtime-client-gql';
 import { IntelCard } from '../components/IntelCard';
 import { ClassifiedHeader } from '../components/ClassifiedHeader';
 import { SeverityBadge } from '../components/SeverityBadge';
@@ -201,7 +203,18 @@ function Chip({ label, onClick, style }: { label: string; onClick?: () => void; 
 
 function ThreatBriefingRender({ args }: { args: Record<string, unknown> }) {
   const [expanded, setExpanded] = useState(false);
+  const { appendMessage } = useCopilotChat();
   const t = INTEL_THEME;
+
+  const countryName = args.countryName as string;
+
+  const sendChatMessage = useCallback(
+    (content: string) => {
+      appendMessage(new TextMessage({ role: MessageRole.User, content }));
+    },
+    [appendMessage],
+  );
+
   return (
     <>
       <IntelCard>
@@ -223,9 +236,9 @@ function ThreatBriefingRender({ args }: { args: Record<string, unknown> }) {
             onClick={() => setExpanded(true)}
             style={{ color: t.colors.accent, borderColor: t.colors.accent + '44' }}
           />
-          <Chip label={`CASCADE ANALYSIS`} />
-          <Chip label={`WARGAME SCENARIO`} />
-          <Chip label={`RECOMMEND RESPONSE`} />
+          <Chip label="CASCADE ANALYSIS" onClick={() => sendChatMessage(`Run a cascade analysis on ${countryName}`)} />
+          <Chip label="WARGAME SCENARIO" onClick={() => sendChatMessage(`Run a wargame scenario for ${countryName}`)} />
+          <Chip label="RECOMMEND RESPONSE" onClick={() => sendChatMessage(`Recommend a response for ${countryName}`)} />
         </div>
       </IntelCard>
 

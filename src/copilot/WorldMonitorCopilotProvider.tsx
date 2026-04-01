@@ -64,6 +64,11 @@ export function WorldMonitorCopilotProvider({ children }: Props) {
     value: state.activeMapLayers ?? [],
   });
 
+  useCopilotReadable({
+    description: 'Action workflow guidance: after completing a threatBriefing or scenarioWargame, always follow up by calling threatResponseRecommendation to propose a recommended response for user approval. Include relevant dashboardActions (navigateToCountry, addDashboardPanel, toggleMapLayer) so the user can approve them in one step.',
+    value: null,
+  });
+
   // ── Register custom frontend actions (tools) ──────────────────────
 
   useNavigateToCountryAction();
