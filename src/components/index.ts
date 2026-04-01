@@ -27,6 +27,7 @@ export * from './CIIPanel';
 export * from './CascadePanel';
 export * from './StrategicRiskPanel';
 export * from './StrategicPosturePanel';
+export * from './ScenarioTheaterPanel';
 export * from './IntelligenceGapBadge';
 export * from './TechEventsPanel';
 export * from './ServiceStatusPanel';

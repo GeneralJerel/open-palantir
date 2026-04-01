@@ -5,7 +5,7 @@ interface Props {
   color?: string;
 }
 
-export function ClassifiedHeader({ classification = 'TOP SECRET // COPILOTKIT', color }: Props) {
+export function ClassifiedHeader({ classification = 'TOP SECRET // SCI', color }: Props) {
   return (
     <div
       style={{

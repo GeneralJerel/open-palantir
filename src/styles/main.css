@@ -22415,3 +22415,256 @@ body.map-width-resizing {
 .chat-action-chip:hover {
   background: color-mix(in srgb, var(--accent) 22%, transparent);
 }
+
+/* ── Scenario Theater Panel ─────────────────────────────────────── */
+.scenario-theater-panel {
+  padding: 0;
+}
+
+.scenario-theater-header {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
+}
+
+.scenario-theater-classification {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #dc2828;
+  text-transform: uppercase;
+}
+
+.scenario-theater-section-label {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--accent, #44ff88);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
+}
+
+/* Stage transition */
+.scenario-theater-stage {
+  padding: 12px 16px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.scenario-theater-stage.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Force disposition */
+.scenario-theater-faction {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  background: var(--surface, rgba(255,255,255,0.03));
+  border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
+  border-left: 3px solid var(--faction-color, #888);
+  border-radius: 4px;
+  opacity: 0;
+  animation: scenario-faction-reveal 0.4s ease forwards;
+}
+
+.scenario-theater-faction-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+.scenario-theater-faction-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text, #e0e0e0);
+  min-width: 100px;
+}
+
+.scenario-theater-faction-count {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--faction-color, #888);
+  margin-left: auto;
+  min-width: 24px;
+  text-align: right;
+}
+
+.scenario-theater-faction-types {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 9px;
+  color: var(--text-muted, #666);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes scenario-faction-reveal {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Threat assessment */
+.scenario-theater-threat {
+  margin-bottom: 10px;
+}
+
+.scenario-theater-threat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.scenario-theater-threat-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text, #e0e0e0);
+}
+
+.scenario-theater-severity {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 1px 6px;
+  border: 1px solid;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+
+.scenario-theater-bar-track {
+  height: 6px;
+  background: var(--border-subtle, rgba(255,255,255,0.08));
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 2px;
+}
+
+.scenario-theater-bar-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 3px;
+  transition: none;
+}
+
+.scenario-theater-bar-fill.animate {
+  width: var(--bar-width, 0%);
+  transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.scenario-theater-bar-pct {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  color: var(--text-dim, #999);
+}
+
+/* Situation active */
+.scenario-theater-active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(68, 255, 136, 0.1);
+  border: 1px solid rgba(68, 255, 136, 0.3);
+  border-radius: 4px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent, #44ff88);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.scenario-theater-active-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent, #44ff88);
+  box-shadow: 0 0 8px var(--accent, #44ff88);
+  animation: pulse-dot 1s ease-in-out infinite;
+}
+
+.scenario-theater-summary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.scenario-theater-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px;
+  background: var(--surface, rgba(255,255,255,0.03));
+  border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
+  border-radius: 4px;
+}
+
+.scenario-theater-stat-value {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent, #44ff88);
+  line-height: 1;
+}
+
+.scenario-theater-stat-label {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text-muted, #666);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+.scenario-theater-zoom-btn {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  background: rgba(68, 255, 136, 0.08);
+  border: 1px solid rgba(68, 255, 136, 0.25);
+  border-radius: 4px;
+  color: var(--accent, #44ff88);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.scenario-theater-zoom-btn:hover {
+  background: rgba(68, 255, 136, 0.18);
+  border-color: rgba(68, 255, 136, 0.5);
+}
+
+.scenario-theater-timestamp {
+  margin-top: 8px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 9px;
+  color: var(--text-muted, #666);
+  text-align: center;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}

@@ -32,6 +32,7 @@ import {
   CascadePanel,
   StrategicRiskPanel,
   StrategicPosturePanel,
+  ScenarioTheaterPanel,
   TechEventsPanel,
   ServiceStatusPanel,
   InternetDisruptionsPanel,
@@ -759,6 +760,17 @@ export class PanelLayoutManager implements AppModule {
       this.applyPanelSettings();
       this.updatePanelGating(getAuthState());
     });
+
+    {
+      const scenarioPanel = this.createPanel('scenario-theater', () => {
+        const p = new ScenarioTheaterPanel();
+        p.setLocationClickHandler((lat, lon) => {
+          this.ctx.map?.setCenter(lat, lon, 4);
+        });
+        return p;
+      });
+      if (scenarioPanel) scenarioPanel.hide();
+    }
 
     if (this.shouldCreatePanel('cii')) {
       const ciiPanel = new CIIPanel();

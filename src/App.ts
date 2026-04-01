@@ -1051,6 +1051,22 @@ export class App {
         .filter(([, v]) => v === true)
         .map(([k]) => k);
       appBridge.update({ activeMapLayers: activeLayers });
+
+      // Activate/deactivate the Theater Situation panel
+      const theaterPanel = this.state.panels['scenario-theater'] as
+        import('@/components/ScenarioTheaterPanel').ScenarioTheaterPanel | undefined;
+      if (overlay) {
+        // Enable panel in settings so it becomes visible in the grid
+        const config = this.state.panelSettings['scenario-theater'];
+        if (config) {
+          config.enabled = true;
+          saveToStorage(STORAGE_KEYS.panels, this.state.panelSettings);
+          this.eventHandlers.applyPanelSettings();
+        }
+        theaterPanel?.activate();
+      } else {
+        theaterPanel?.deactivate();
+      }
     }) as EventListener);
   }
 

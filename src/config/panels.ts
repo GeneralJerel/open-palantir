@@ -95,6 +95,7 @@ const FULL_PANELS: Record<string, PanelConfig> = {
   'cross-source-signals': { name: 'Cross-Source Signals', enabled: true, priority: 2 },
   'market-implications': { name: 'AI Market Implications', enabled: true, priority: 1, premium: 'locked' as const },
   'deduction': { name: 'Deduct Situation', enabled: true, priority: 1, premium: 'locked' as const },
+  'scenario-theater': { name: 'Theater Situation', enabled: false, priority: 5 },
   'geo-hubs': { name: 'Geopolitical Hubs', enabled: false, priority: 2 },
   'tech-hubs': { name: 'Hot Tech Hubs', enabled: false, priority: 2 },
 };
