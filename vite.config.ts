@@ -111,6 +111,33 @@ function htmlVariantPlugin(activeMeta: VariantMeta, activeVariant: string, isDes
   };
 }
 
+function copilotPlugin(): Plugin {
+  return {
+    name: 'copilot-dev',
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (req.url !== '/api/copilot' && !req.url?.startsWith('/api/copilot?')) return next();
+
+        const { CopilotRuntime, OpenAIAdapter, copilotRuntimeNodeHttpEndpoint } = await import(
+          '@copilotkit/runtime'
+        );
+
+        const model = process.env.COPILOT_MODEL || undefined;
+        const serviceAdapter = new OpenAIAdapter({ model });
+        const runtime = new CopilotRuntime({ remoteActions: [] });
+
+        const handler = copilotRuntimeNodeHttpEndpoint({
+          runtime,
+          serviceAdapter,
+          endpoint: '/api/copilot',
+        });
+
+        await handler(req, res);
+      });
+    },
+  };
+}
+
 function polymarketPlugin(): Plugin {
   const GAMMA_BASE = 'https://gamma-api.polymarket.com';
   const ALLOWED_ORDER = ['volume', 'liquidity', 'startDate', 'endDate', 'spread'];
@@ -617,6 +644,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react({ include: /\.tsx$/ }),
       htmlVariantPlugin(activeMeta, activeVariant, isDesktopBuild),
+      copilotPlugin(),
       polymarketPlugin(),
       rssProxyPlugin(),
       youtubeLivePlugin(),

@@ -4,6 +4,10 @@ import { useNavigateToCountryAction } from './actions/navigateToCountry';
 import { useAddPanelAction } from './actions/addPanel';
 import { useSearchEventsAction } from './actions/searchEvents';
 import { useToggleMapLayerAction } from './actions/toggleMapLayer';
+import { useThreatBriefingAction } from './actions/threatBriefing';
+import { useCascadeAnalysisAction } from './actions/cascadeAnalysis';
+import { useScenarioWargameAction } from './actions/scenarioWargame';
+import { useThreatResponseAction } from './actions/threatResponse';
 
 interface Props {
   children: React.ReactNode;
@@ -66,6 +70,12 @@ export function WorldMonitorCopilotProvider({ children }: Props) {
   useAddPanelAction();
   useSearchEventsAction();
   useToggleMapLayerAction();
+
+  // ── Generative UI actions ──────────────────────────────────────────
+  useThreatBriefingAction();
+  useCascadeAnalysisAction();
+  useScenarioWargameAction();
+  useThreatResponseAction();
 
   return <>{children}</>;
 }
